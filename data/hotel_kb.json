@@ -1,0 +1,182 @@
+[
+  {
+    "id": "amenity_001",
+    "category": "amenity",
+    "title": "Swimming Pool",
+    "content": "The outdoor swimming pool is open daily from 6:00 AM to 10:00 PM. The pool area includes sun loungers, towel service, and a poolside bar serving light snacks and beverages. Children under 12 must be accompanied by an adult. Pool depth ranges from 1.2m to 2.4m."
+  },
+  {
+    "id": "amenity_002",
+    "category": "amenity",
+    "title": "Spa and Wellness Center",
+    "content": "The Serenity Spa is open Monday to Sunday, 9:00 AM to 9:00 PM. Services include Swedish massage, deep tissue massage, aromatherapy, facial treatments, and a steam room. Advance booking is required and can be done at the front desk or by calling extension 205. The spa does not accept walk-in appointments on weekends."
+  },
+  {
+    "id": "amenity_003",
+    "category": "amenity",
+    "title": "Fitness Center",
+    "content": "The 24-hour fitness center is located on the 2nd floor. Equipment includes treadmills, ellipticals, free weights, resistance machines, and yoga mats. A certified personal trainer is available on weekday mornings from 7:00 AM to 11:00 AM. No booking required for gym access; use your room key card."
+  },
+  {
+    "id": "dining_001",
+    "category": "dining",
+    "title": "The Grand Restaurant — Hours and Overview",
+    "content": "The Grand Restaurant on the lobby level serves breakfast (7:00 AM – 10:30 AM), lunch (12:30 PM – 3:00 PM), and dinner (7:00 PM – 11:00 PM). The menu features Indian, Continental, and Asian cuisine. The restaurant accommodates both in-house guests and outside visitors. Dress code: smart casual for dinner."
+  },
+  {
+    "id": "dining_002",
+    "category": "dining",
+    "title": "Room Service",
+    "content": "Room service is available 24 hours a day, 7 days a week. To place an order, dial extension 204 from your room phone or use the in-room tablet. Standard delivery time is 30–45 minutes. A room service surcharge of INR 150 applies per order. The full room service menu is available in your room's welcome folder."
+  },
+  {
+    "id": "dining_003",
+    "category": "dining",
+    "title": "Rooftop Bar — Skyline Lounge",
+    "content": "Skyline Lounge on the 14th floor is open Wednesday to Sunday from 5:00 PM to 12:00 AM. The lounge serves cocktails, mocktails, wines, and a curated selection of bar snacks. Live acoustic music plays every Friday and Saturday from 7:30 PM. Minimum age: 21 years. Smart casual dress code enforced."
+  },
+  {
+    "id": "checkin_001",
+    "category": "check_in_out",
+    "title": "Check-in and Check-out Times",
+    "content": "Standard check-in time is 2:00 PM. Standard check-out time is 12:00 noon. Early check-in (from 10:00 AM) is subject to availability and may incur an additional half-day charge. Late check-out (until 6:00 PM) is available upon request and subject to availability; charges may apply. Please contact the front desk for assistance."
+  },
+  {
+    "id": "checkin_002",
+    "category": "check_in_out",
+    "title": "Express Check-out",
+    "content": "Express check-out is available for guests who have provided a credit card at the time of check-in. Your itemized bill will be emailed to the address provided during booking. Simply leave your room key at the front desk or drop it in the express check-out box located in the lobby before noon."
+  },
+  {
+    "id": "rooms_001",
+    "category": "rooms",
+    "title": "Room Types Overview",
+    "content": "The hotel offers four room categories: Deluxe Room (single or double occupancy, garden or pool view), Club Room (upper floors, complimentary Club Lounge access, city view), Junior Suite (separate living area, premium amenities), and Presidential Suite (full floor, private butler service, panoramic views). All rooms include high-speed Wi-Fi, air conditioning, flat-screen TV, minibar, and in-room safe."
+  },
+  {
+    "id": "rooms_002",
+    "category": "rooms",
+    "title": "Wi-Fi Access",
+    "content": "Complimentary high-speed Wi-Fi is available throughout the hotel. Network name: HotelGuest_5G. Password is available at the front desk or on your room key card envelope. Wi-Fi speed is up to 100 Mbps. For technical assistance, call IT support at extension 209."
+  },
+  {
+    "id": "rooms_003",
+    "category": "rooms",
+    "title": "Minibar Policy",
+    "content": "All rooms come with a complimentary stocked minibar including water, soft drinks, and two alcoholic beverages. Consumed items are automatically billed to your room account via RFID sensors. Minibar is restocked daily. Additional items can be requested from room service."
+  },
+  {
+    "id": "policy_001",
+    "category": "policy",
+    "title": "Cancellation Policy",
+    "content": "Reservations cancelled more than 48 hours before the check-in date will receive a full refund to the original payment method. Cancellations within 48 hours of check-in will be charged one night's stay as a cancellation fee. No-show bookings are charged the full reservation amount. To cancel, contact the reservations team at reservations@grandhotel.com or call the front desk."
+  },
+  {
+    "id": "policy_002",
+    "category": "policy",
+    "title": "Pet Policy",
+    "content": "The hotel is pet-friendly. Well-behaved dogs and cats are welcome in designated pet-friendly rooms (subject to availability) for an additional fee of INR 1,500 per night. Pets must be kept on a leash in public areas. Pets are not permitted in the restaurant, pool area, or spa. Please inform the reservations team when booking if you are bringing a pet."
+  },
+  {
+    "id": "policy_003",
+    "category": "policy",
+    "title": "Smoking Policy",
+    "content": "The hotel is entirely non-smoking indoors, including all guest rooms, corridors, restaurants, and public areas. Designated smoking zones are located near the main entrance and at the poolside garden area. A deep-cleaning fee of INR 5,000 will be charged for smoking in non-designated areas."
+  },
+  {
+    "id": "services_001",
+    "category": "services",
+    "title": "Concierge Services",
+    "content": "Our concierge team is available at the lobby desk 24 hours a day. Services include restaurant reservations, sightseeing tours, car rental arrangements, airport transfers, laundry and dry-cleaning coordination, and courier services. The concierge can also assist with sourcing local products and arranging customized experiences."
+  },
+  {
+    "id": "services_002",
+    "category": "services",
+    "title": "Laundry and Dry Cleaning",
+    "content": "Laundry service is available daily. Items left before 9:00 AM will be returned by 6:00 PM the same day (same-day service). Items left after 9:00 AM will be returned the next day. Express service (4-hour turnaround) is available for an additional charge. Place items in the laundry bag in your wardrobe and fill out the laundry slip."
+  },
+  {
+    "id": "services_003",
+    "category": "services",
+    "title": "Airport Transfer",
+    "content": "The hotel offers airport transfer services to and from Chhatrapati Shivaji Maharaj International Airport. Transfers can be booked through the concierge desk or at check-in. Standard sedan transfer is available; luxury vehicle upgrades are also available. Please provide your flight details at least 6 hours in advance. Contact the concierge at extension 201."
+  },
+  {
+    "id": "facilities_001",
+    "category": "facilities",
+    "title": "Business Center",
+    "content": "The Business Center is open Monday to Friday from 8:00 AM to 8:00 PM, and Saturday from 9:00 AM to 3:00 PM. It is closed on Sundays. Facilities include workstations, high-speed internet, printing, scanning, photocopying, and a private meeting pod for up to 4 people. Located on the mezzanine floor."
+  },
+  {
+    "id": "facilities_002",
+    "category": "facilities",
+    "title": "Meeting and Event Spaces",
+    "content": "The hotel has three conference rooms: Sapphire Hall (capacity 80 pax, boardroom or classroom layout), Emerald Room (capacity 30 pax, ideal for workshops), and the Executive Boardroom (capacity 12 pax, permanent boardroom setup). All rooms include AV equipment, whiteboards, and catering coordination. For event bookings, contact the events team at events@grandhotel.com."
+  },
+  {
+    "id": "facilities_003",
+    "category": "facilities",
+    "title": "Parking",
+    "content": "The hotel provides complimentary valet parking for all in-house guests. Self-parking is available in the basement at INR 100 per hour or INR 600 per day. Valet parking requests should be submitted at the front desk at least 30 minutes before vehicle retrieval. Electric vehicle charging stations are available on B2 level."
+  },
+  {
+    "id": "location_001",
+    "category": "location",
+    "title": "Hotel Location and Directions",
+    "content": "The Grand Hotel is located at 42 Marine Drive Boulevard, South Mumbai, Maharashtra 400002. We are a 5-minute walk from Marine Lines railway station. The nearest metro station is Chhatrapati Shivaji Terminus (CST) on the Aqua Line, a 10-minute walk. From the airport, the hotel is approximately 45 minutes by car under normal traffic conditions."
+  },
+  {
+    "id": "location_002",
+    "category": "location",
+    "title": "Nearby Attractions",
+    "content": "Within walking distance: Gateway of India (15 min), Taj Mahal Palace (12 min), Chhatrapati Shivaji Maharaj Vastu Sangrahalaya museum (10 min walk). Nearby by car: Juhu Beach (25 min), Elephanta Caves ferry terminal (20 min drive). The concierge can arrange guided tours to any of these destinations."
+  },
+  {
+    "id": "accessibility_001",
+    "category": "accessibility",
+    "title": "Accessibility Features",
+    "content": "The hotel is fully accessible for guests with disabilities. All public areas, restaurants, and the pool are wheelchair accessible. Accessible guest rooms with widened doorways, roll-in showers, grab bars, and lowered amenities are available on request. Please inform the reservations team of specific accessibility requirements at the time of booking."
+  },
+  {
+    "id": "safety_001",
+    "category": "safety",
+    "title": "Safety and Emergency Procedures",
+    "content": "In case of emergency, dial extension 0 from any hotel phone or call the front desk at +91-22-6600-0000. Emergency exits are clearly marked on each floor. Fire evacuation procedures are posted on the back of every room door. The hotel has 24-hour security. A defibrillator is located at the front desk. First aid is available at the concierge desk."
+  },
+  {
+    "id": "children_001",
+    "category": "family",
+    "title": "Children's Facilities and Babysitting",
+    "content": "The hotel has a dedicated Kids' Club on the ground floor, open daily from 10:00 AM to 6:00 PM for children aged 4 to 12. Activities include arts and crafts, games, and supervised play. Babysitting services can be arranged through the concierge with 24 hours' advance notice. An extra bed or cot for children under 5 is provided free of charge."
+  },
+  {
+    "id": "loyalty_001",
+    "category": "loyalty",
+    "title": "Loyalty Program",
+    "content": "The Grand Rewards loyalty program offers three tiers: Silver (0–4 nights/year), Gold (5–14 nights/year), and Platinum (15+ nights/year). Members earn 10 points per INR 100 spent and can redeem points for room upgrades, dining credits, and spa treatments. Enroll at the front desk or at grandhotel.com/rewards. Points expire after 24 months of inactivity."
+  },
+  {
+    "id": "transport_001",
+    "category": "transport",
+    "title": "Local Transport Options",
+    "content": "The concierge can arrange pre-booked taxis and luxury car services. The hotel does not have a direct affiliation with app-based ride services, but guests may use any ride-hailing app. Bicycle rentals are available at the concierge desk for INR 200 per hour. A hop-on hop-off tourist bus stop is located 3 minutes from the main entrance."
+  },
+  {
+    "id": "feedback_001",
+    "category": "feedback",
+    "title": "Guest Feedback and Complaints",
+    "content": "We take all guest feedback seriously. For immediate concerns, please contact the duty manager at extension 200, available 24 hours. For written feedback, speak to any team member or complete the feedback form available at the front desk or in your room. Our Guest Relations Manager, Ms. Priya Sharma, is available weekdays from 9:00 AM to 6:00 PM."
+  },
+  {
+    "id": "payment_001",
+    "category": "payment",
+    "title": "Accepted Payment Methods",
+    "content": "The hotel accepts Visa, Mastercard, American Express, and RuPay credit and debit cards. Cash payment in Indian Rupees is accepted at the front desk. UPI payments are accepted for incidental charges settled at checkout. Foreign currency exchange is available at the front desk during business hours."
+  },
+  {
+    "id": "dining_004",
+    "category": "dining",
+    "title": "Dietary Accommodations",
+    "content": "The Grand Restaurant offers vegetarian, vegan, gluten-free, Jain, and Halal meal options. Please inform the restaurant host or room service when placing your order. Guests with severe allergies should speak with the head chef directly; contact the restaurant at extension 203."
+  }
+]

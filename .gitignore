@@ -1,0 +1,20 @@
+# Environments & secrets
+.env
+venv/
+.venv/
+
+# Caching & compiled assets
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# System specific files
+.DS_Store
+Thumbs.db
+
+# Vector Index Artifacts
+faiss_index/
+*.pkl

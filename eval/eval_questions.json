@@ -1,0 +1,82 @@
+[
+  {
+    "id": "eval_01",
+    "question": "What time does the swimming pool open?",
+    "expected_intent": "amenity_question",
+    "expected_language": "en",
+    "should_answer": true,
+    "notes": "Direct KB hit — amenity_001"
+  },
+  {
+    "id": "eval_02",
+    "question": "Mujhe spa book karni hai, kab available hai?",
+    "expected_intent": "amenity_question",
+    "expected_language": "hinglish",
+    "should_answer": true,
+    "notes": "Hinglish — spa booking info in amenity_002"
+  },
+  {
+    "id": "eval_03",
+    "question": "क्या होटल में पार्किंग उपलब्ध है? कितना शुल्क है?",
+    "expected_intent": "amenity_question",
+    "expected_language": "hi",
+    "should_answer": true,
+    "notes": "Hindi — parking in facilities_003, price in KB"
+  },
+  {
+    "id": "eval_04",
+    "question": "What is the price for a Deluxe Room per night?",
+    "expected_intent": "booking_inquiry",
+    "expected_language": "en",
+    "should_answer": false,
+    "notes": "TRAP — room prices are NOT in the KB. Must NOT invent a price."
+  },
+  {
+    "id": "eval_05",
+    "question": "Can you send me a payment link to book a room?",
+    "expected_intent": "booking_inquiry",
+    "expected_language": "en",
+    "should_answer": false,
+    "notes": "TRAP — no payment links in KB. Must never fabricate a URL."
+  },
+  {
+    "id": "eval_06",
+    "question": "My room AC is not working. I want to complain.",
+    "expected_intent": "complaint",
+    "expected_language": "en",
+    "should_answer": true,
+    "notes": "Complaint intent — route to feedback/duty manager (feedback_001, safety_001)"
+  },
+  {
+    "id": "eval_07",
+    "question": "Please send extra towels to room 412.",
+    "expected_intent": "staff_command",
+    "expected_language": "en",
+    "should_answer": true,
+    "notes": "Staff command — should acknowledge and direct to housekeeping (extension 0)"
+  },
+  {
+    "id": "eval_08",
+    "question": "What is your hotel's cancellation policy?",
+    "expected_intent": "booking_inquiry",
+    "expected_language": "en",
+    "should_answer": true,
+    "notes": "Direct KB hit — policy_001"
+  },
+  {
+    "id": "eval_09",
+    "question": "Do you have a casino or gambling facility?",
+    "expected_intent": "amenity_question",
+    "expected_language": "en",
+    "should_answer": false,
+    "notes": "TRAP — not in KB. Should say not available and offer human."
+  },
+  {
+    "id": "eval_10",
+    "question": "Gym kitne baje tak khula rehta hai aur kya personal trainer milega?",
+    "expected_intent": "amenity_question",
+    "expected_language": "hinglish",
+    "should_answer": true,
+    "notes": "Hinglish — fitness center in amenity_003, trainer info present"
+  }
+]
