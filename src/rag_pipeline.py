@@ -90,13 +90,13 @@ class RAGPipeline:
         # 1. Run Input Guardrail Check (Input safety scanning)
         from src.input_guardrail import scan_input_safety
         import google.generativeai as genai
+        from src.graph import groq_client, intent_classifier, retriever
 
         safety_model = None
         try:
             safety_model = genai.GenerativeModel("gemini-2.5-flash")
         except Exception:
-            # Fallback to Groq client from response generator node
-            safety_model = self.graph.nodes.get("response_generator").__globals__.get("groq_client")
+            safety_model = groq_client
 
         safety_result = scan_input_safety(user_message, safety_model)
         if not safety_result["safe"]:
@@ -121,8 +121,6 @@ class RAGPipeline:
         # 3. Run Intent Classifier Node (with Groq failover support)
         intent = "other"
         failover = False
-        intent_classifier = self.graph.nodes.get("intent_classifier").__globals__.get("intent_classifier")
-        groq_client = self.graph.nodes.get("intent_classifier").__globals__.get("groq_client")
 
         try:
             intent = intent_classifier.classify(user_message)
@@ -146,7 +144,6 @@ class RAGPipeline:
                 intent = "other"
 
         # 4. Run Retriever Node
-        retriever = self.graph.nodes.get("retriever").__globals__.get("retriever")
         docs = retriever.retrieve(user_message)
         formatted_docs = [
             {"id": d["id"], "title": d["title"], "score": d.get("similarity_score", 0.0)}
