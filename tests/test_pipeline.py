@@ -1,6 +1,6 @@
 import pytest
 from src.conversation import ConversationManager
-from src.rag_pipeline import format_context, format_history, get_language_instruction
+from src.graph import format_context, format_history, get_language_instruction
 
 
 def test_conversation_manager():

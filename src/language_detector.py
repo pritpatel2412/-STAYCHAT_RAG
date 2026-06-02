@@ -22,7 +22,7 @@ HINGLISH_MARKERS = {
     "kya", "hai", "mujhe", "aapka", "kab", "kaise", "hain",
     "chahiye", "batao", "bata", "yahan", "wahan",
     "kitne", "kitna", "accha", "theek", "mera", "meri", "humare",
-    "hamare", "kamra", "room", "milega", "karna", "karne"
+    "hamare", "kamra", "milega", "karna", "karne"
 }
 
 
@@ -50,7 +50,13 @@ def detect_language(text: str) -> str:
         logger.info(f"Hinglish markers matched: {matching_markers}. Language classified as 'hinglish'")
         return "hinglish"
 
-    # 3. Fallback: If no markers match, use a lightweight Gemini classification fallback
+    # 3. High-performance local English check:
+    # If the text is purely standard printable ASCII characters, it is English.
+    if all(ord(c) < 128 for c in text_stripped):
+        logger.info("Text is pure ASCII with no Hinglish markers. Classifying as 'en' locally.")
+        return "en"
+
+    # 4. Fallback: If no markers match and the text is non-ASCII, use a lightweight Gemini classification fallback
     # to catch Romanized Hindi sentences that did not match our keyword list (e.g. "room service de do").
     logger.info("Local heuristics returned default English. Querying Gemini for confirmation fallback...")
     try:

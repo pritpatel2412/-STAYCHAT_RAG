@@ -66,8 +66,8 @@ class IntentClassifier:
             logger.info(f"Intent classified successfully as: '{intent}'")
             return intent
         except Exception as e:
-            logger.error(f"Gemini intent classification failed: {e}. Defaulting to 'other'")
-            return "other"
+            logger.error(f"Gemini intent classification failed: {e}")
+            raise e
 
 
 # Wrapper function for functional call patterns

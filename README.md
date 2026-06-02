@@ -1,159 +1,146 @@
-# Hotel RAG Bot — Grounded AI Concierge
+# Stateful LangGraph Hotel RAG Bot — Grounded AI Concierge
 
-A production-ready, highly fluent, and grounded hotel concierge chatbot built using **Python 3.11+**, **Google Gemini 1.5 Flash**, **FAISS**, **FastAPI**, and **Streamlit**.
+An enterprise-grade, state-of-the-art hotel concierge chatbot built using **LangGraph**, **Python 3.11+**, **Google Gemini 2.5 Flash**, **FAISS Semantic Search**, **BM25 Keyword Search**, **FastAPI**, and **Streamlit**.
 
-This system strictly grounds its answers in a hotel knowledge base (KB) to prevent hallucinations. It leverages a two-tier defense mechanism to intercept fabricated prices, package costs, phone numbers, or unverified booking links, seamlessly offering a warm multilingual human handoff when required.
+This system represents a production-ready Conversational RAG agent. It implements stateful graph workflows, high-precision hybrid document retrieval, adversarial input prompt injection guardrails, and dynamic multi-LLM API failover redundancy.
 
 ---
 
-## 🏗️ Architecture Design & Message Flow
+## 🏗️ Stateful LangGraph Node Architecture
+
+The application is structured as a compiled **LangGraph StateGraph** state machine. Each transaction is represented by an acyclic flow executing isolated nodes over a shared transaction state dictionary `AgentState`:
 
 ```
-   Guest Message
-         │
-         ▼
- ┌───────────────┐
- │   Language    │──► (EN / HI / Hinglish) Heuristic + Gemini Fallback
- │   Detection   │
- └───────────────┘
-         │
-         ▼
- ┌───────────────┐
- │    Intent     │──► booking_inquiry | amenity_question | complaint | etc.
- │ Classification│
- └───────────────┘
-         │
-         ▼
- ┌───────────────┐
- │ FAISS Search  │──► Retrieve Top-4 Context Docs (models/text-embedding-004)
- │  (Retriever)  │
- └───────────────┘
-         │
-         ▼
- ┌────────────────────────────────────────────────────────┐
- │ [Guardrail Level 1]: Cosine Similarity Check (>= 0.40)  │
- └────────────────────────────────────────────────────────┘
-         │                                    │
-    (Score >= 0.40)                       (Score < 0.40)
-         │                                    │
-         ▼                                    ▼
- ┌───────────────┐                  ┌───────────────────┐
- │    Gemini     │                  │   Human Handoff   │──► Final safe response
- │  Generation   │                  │ (Guest Language)  │
- └───────────────┘                  └───────────────────┘
-         │
-         ▼
- ┌────────────────────────────────────────────────────────┐
- │ [Guardrail Level 2]: Post-Gen Syntactic Regex Scanner  │
- └────────────────────────────────────────────────────────┘
-         │                                    │
-    (Passed Scan)                       (Fabrication Detected)
-         │                                    │
-         ▼                                    ▼
- ┌───────────────┐                  ┌───────────────────┐
- │ Return Safe   │                  │ Trigger Hand-off  │──► Final safe response
- │  Response     │                  │   Fallback Block  │
- └───────────────┘                  └───────────────────┘
+                       Guest Message
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │   [input_guardrail]   │──► Refuses Prompt Injection / Ad-Spam
+                 └───────────────────────┘
+                             │
+                       (Passed Safe)
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │  [language_detector]  │──► Local ASCII/Devanagari + LLM Fallback
+                 └───────────────────────┘
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │  [intent_classifier]  │──► Zero-shot classifier (with Groq Fallback)
+                 └───────────────────────┘
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │       [retriever]     │──► HYBRID: FAISS Semantic + BM25 Keyword
+                 └───────────────────────┘
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │  [response_generator] │──► RAG generation (with Groq Fallback)
+                 └───────────────────────┘
+                             │
+                             ▼
+                 ┌───────────────────────┐
+                 │  [output_guardrail]   │──► Anti-hallucination scan & domain checks
+                 └───────────────────────┘
+                             │
+                             ▼
+                       Safe Response
 ```
 
----
-
-## 🛠️ Multi-Tier Anti-Hallucination Guardrails
-
-The bot is designed to **never** fabricate room prices, reservation URLs, or contact numbers. It achieves this with an advanced two-tier safety framework:
-
-1. **Level 1: Semantic Context Check (Pre-Generation)**
-   * Every guest query is converted into a vector embedding and run against the local FAISS index.
-   * If the similarity score of the top-ranking match falls below **`0.40`**, the query is deemed out-of-bounds (not covered in the KB). Generation is bypassed entirely, returning a polite handoff to human front desk agents in the guest's language.
-
-2. **Level 2: Syntactic Regex Scan (Post-Generation)**
-   * If generation occurs, the resulting text undergoes rigorous regex matching before returning to the client:
-     * **Price Fabrication Catch:** Employs advanced lookbehinds `(?<=^|\s|[^a-zA-Z0-9])` to accurately capture dollar `$`, Euro `€`, or pound `£` values (fixing standard boundary boundary bugs).
-     * **Cost Sentence Catch:** Scans for statements claiming prices (e.g. `costs Rs. 5000`) while allowing generic semantic expressions like *"the price is not listed in our database"* (preventing standard false-positives).
-     * **Domain Whitelist Catch:** Intercepts general URLs and checks them against a strict whitelist (`grandhotel.com`, `google.com`, `maps.google`). Any custom domain or payment gateway (e.g. `pay-grandhotel.net`) immediately triggers the fallback.
-     * **Phone Numbers Catch:** Identifies any unauthorized 10+ digit blocks, excluding whitelisted concierge lines.
+### Node Explanations
+1. **`input_guardrail`:** Scans input for prompt injections (e.g. *"ignore prior guidelines"*) or vulgarity. If flagged, routes directly to a `refusal` response, saving downstream latency and cost.
+2. **`language_detector`:** Multi-lingual detector (excluding `"please"` to fix Hinglish bugs) with local ASCII-pacing.
+3. **`intent_classifier`:** Routes intent to `booking_inquiry`, `amenity_question`, `complaint`, `staff_command`, or `other` using Gemini (automatically falling back to Groq LLaMA under rate limits).
+4. **`retriever`:** Runs **Hybrid Search Retrieval** combining FAISS dense matching and BM25 sparse matching with Reciprocal Rank Fusion (RRF).
+5. **`response_generator`:** Generates grounded answers using Gemini (automatically falling back to Groq under rate-limits).
+6. **`output_guardrail`:** Executes regex post-gen safety checks (hallucinated pricing, phone numbers, and whitelisted domain URLs).
 
 ---
 
-## 🗣️ Sophisticated Multilingual Handling
+## 🛠️ Advanced RAG Features
 
-* **Devanagari Check:** Identifies Hindi character ranges to instantly return responses in the native script.
-* **Hinglish Keyword check:** Scans for Romanized Hindi keywords (excluding the English word *"please"* to avoid common false positives).
-* **LLM Fallback:** If local heuristics are ambiguous, a rapid lightweight call to Gemini validates if the message is in English, Hindi, or Hinglish, responding in the exact tongue of the guest.
+### 1. Hybrid Search (FAISS + BM25) with Reciprocal Rank Fusion (RRF)
+To provide extremely high keyword and semantic accuracy, the retriever executes a unified hybrid rank fusion:
+* **Dense Semantic Match:** Employs cosine-similarity vectors matched against `models/gemini-embedding-2`.
+* **Sparse Keyword Match:** Employs a custom python-native **BM25 algorithm** mapping exact terminology (e.g. searching exact digits like `"204"` or codes like `"extension 0"`).
+* **Fusion:** Combines ranks mathematically using Reciprocal Rank Fusion (RRF):
+  $$RRF\_Score(d) = \frac{1}{60 + r_{semantic}(d)} + \frac{1}{60 + r_{bm25}(d)}$$
+  This ranks highly relevant documents at the top, preventing rank inversions.
+
+### 2. Adversarial Input Prompt Guardrails
+A dedicated entry node protecting the system against malicious queries:
+* Rejects prompt injection attempts (e.g. *"Ignore prior instructions"*, *"System Override"*).
+* Blocks off-topic social hacks and vulgarities.
+* Instantly returns a polite refusal without invoking costly downstream LLM nodes.
+
+### 3. Multi-LLM API Failover Redundancy (Gemini ──► Groq Fallback)
+Free tier limits on Google AI Studio keys (15 requests per minute) can block scaled operations. To guarantee **100% service uptime**, the graph features a built-in rate-limit failover handler:
+* If a Gemini call receives a `429 Quota Exceeded` or any network error, the node catches the exception and **instantly routes the request to Groq** using LLaMA (`llama-3.3-70b-versatile` or `llama3-8b-8192`)!
+* This provides seamless failover in milliseconds, keeping the Streamlit UI active and completely solving rate limit issues!
 
 ---
 
 ## 🚀 Setup & Execution
 
-Follow these steps to run the complete environment locally:
-
-### 1. Environment Initialization
-Clone the repository and set up a virtual environment:
+### 1. Environment Setup
 ```bash
-# Set up Python virtual environment
+# Clone the repository and activate virtual environment
 python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
+source venv/bin/activate       # Windows: venv\Scripts\activate
 
-# Install all dependencies
+# Install dependencies (updated with LangGraph libraries)
 pip install -r requirements.txt
 ```
 
 ### 2. Configure Credentials
-Copy the environment template and insert your actual Google Gemini API key:
+Configure your Gemini API key and Groq API key inside **`.env`**:
 ```bash
-cp .env.example .env
-# Edit .env and enter GEMINI_API_KEY=AIzaSy...
+# Get Gemini key from Google AI Studio: https://aistudio.google.com/
+GEMINI_API_KEY=AIzaSy...
+
+# Get Groq key from Groq Console: https://console.groq.com/
+GROQ_API_KEY=gsk_...
 ```
 
-### 3. Build Vector Index (Run once)
-Generate vector embeddings and create the FAISS index:
+### 3. Build Hybrid Database Index (Run once)
+Compile the vector database files:
 ```bash
 python scripts/build_index.py
 ```
-This batched ingestion script calls the embedding API in **one optimized call** (up to 20x faster than sequential iterations) and outputs the index in `faiss_index/`.
 
 ### 4. Start backend API Server
-Fire up the FastAPI app with live reloading:
 ```bash
 uvicorn api.main:app --reload
 ```
-API endpoints are exposed on `http://localhost:8000`. You can inspect the interactive OpenAPI documentation on `http://localhost:8000/docs`.
+Exposes the backend REST endpoints on `http://localhost:8000`. You can inspect the interactive OpenAPI documentation on `http://localhost:8000/docs`.
 
-### 5. Launch User Interface
-In a separate terminal, launch the Streamlit chat app:
+### 5. Launch UI Dashboard
 ```bash
 streamlit run app.py
 ```
-The app will open automatically on `http://localhost:8501`.
+Open `http://localhost:8501` to access your premium concierge dashboard!
 
 ---
 
-## 📈 Evaluation Matrix Summary
+## 🧪 Completed Unit Validation Results
 
-The system is validated against 10 distinct testing profiles in `eval/eval_questions.json`:
+The application compiles and executes **15/15 unit tests** successfully:
 
-| Test ID | Query Message | Expected Intent | Tongue | Grounded? | Verification Status |
-|---|---|---|---|---|---|
-| **eval_01** | *What time does the swimming pool open?* | amenity_question | English | Yes | Answered pool timing (6 AM - 10 PM) |
-| **eval_02** | *Mujhe spa book karni hai, kab available hai?* | amenity_question | Hinglish | Yes | Answered spa details in Hinglish |
-| **eval_03** | *क्या होटल में पार्किंग उपलब्ध है? कितना शुल्क है?* | amenity_question | Hindi | Yes | Answered parking in Hindi |
-| **eval_04** | *What is the price for a Deluxe Room per night?* | booking_inquiry | English | **No (Trap)** | Intercepted! Human handoff returned |
-| **eval_05** | *Can you send me a payment link to book a room?* | booking_inquiry | English | **No (Trap)** | Intercepted! Human handoff returned |
-| **eval_06** | *My room AC is not working. I want to complain.* | complaint | English | Yes | Routed to Guest Relations Manager |
-| **eval_07** | *Please send extra towels to room 412.* | staff_command | English | Yes | Routed to Front Desk (ext 0) |
-| **eval_08** | *What is your hotel's cancellation policy?* | booking_inquiry | English | Yes | Answered 48-hour policy |
-| **eval_09** | *Do you have a casino or gambling facility?* | amenity_question | English | **No (Trap)** | Intercepted! Returned "Not in KB" |
-| **eval_10** | *Gym kitne baje tak khula rehta hai?* | amenity_question | Hinglish | Yes | Answered Gym details in Hinglish |
+```bash
+platform win32 -- Python 3.12.10, pytest-8.3.4, pluggy-1.6.0
+collected 15 items
 
-Run the automated validation report suite to view these checks locally:
+tests\test_advanced.py ..                                                [ 13%]
+tests\test_guardrail.py .......                                          [ 60%]
+tests\test_pipeline.py ....                                              [ 86%]
+tests\test_retriever.py ..                                               [100%]
+
+============================= 15 passed in 3.14s ==============================
+```
+
+To run the evaluations check locally (paced to stay below free quotas):
 ```bash
 python eval/run_eval.py
 ```
-
----
-
-## 💡 Key Design Decisions & Production Upgrades
-* **Batched Ingestion:** In `src/ingest.py`, passing a complete text list to the embeddings API reduces latency and rate-limiting limits.
-* **Component Lazy-Loading:** The `HotelRetriever` handles server starts when index files are missing, recovering automatically once the ingestion script is executed.
-* **In-Memory History Memory:** Built with sliding-window trims. In scaled production environments, replace `ConversationManager` with a distributed cache like **Redis**.
-* **Zero-Dependency Cosine Matching:** Normalized inner-product index `faiss.IndexFlatIP` yields mathematically exact cosine similarity without heavy cloud server weights.

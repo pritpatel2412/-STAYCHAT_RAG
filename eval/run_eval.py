@@ -98,8 +98,8 @@ def run_evaluation():
         # Pace requests to avoid free-tier 429 rate limits (5 RPM)
         import time
         if q != questions[-1]:
-            logger.info("Pacing requests (sleeping 12 seconds) to respect free-tier RPM limits...")
-            time.sleep(12)
+            logger.info("Pacing requests (sleeping 18 seconds) to respect free-tier RPM limits...")
+            time.sleep(18)
 
     print("\n" + "="*80)
     print(f"FINAL RESULT: {passed}/{len(questions)} passed | {failed}/{len(questions)} failed")

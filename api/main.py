@@ -2,6 +2,7 @@
 
 import uuid
 import time
+import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -11,8 +12,8 @@ from src.logger import logger
 
 app = FastAPI(
     title="Hotel RAG Bot API",
-    description="Grounded, highly robust hotel concierge chatbot powered by Gemini + FAISS",
-    version="1.1.0"
+    description="Grounded, highly robust hotel concierge chatbot powered by LangGraph + FAISS + Groq Failover",
+    version="1.2.0"
 )
 
 # Custom CORS setup for modern web architecture
@@ -63,6 +64,7 @@ class ChatResponse(BaseModel):
     language: str = Field(..., description="Detected language.")
     guardrail_triggered: bool = Field(..., description="True if safety guardrails blocked the output.")
     retrieved_docs: list[RetrievedDocSchema] = Field([], description="Vector search context matches.")
+    failover_active: bool = Field(False, description="True if the request executed via Groq failover.")
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -91,7 +93,8 @@ async def chat(request: ChatRequest):
             intent=result["intent"],
             language=result["language"],
             guardrail_triggered=result["guardrail_triggered"],
-            retrieved_docs=result["retrieved_docs"]
+            retrieved_docs=result["retrieved_docs"],
+            failover_active=result.get("failover_active", False)
         )
     except Exception as e:
         logger.error(f"Internal Pipeline Error inside POST /chat: {e}")
@@ -109,19 +112,30 @@ async def clear_session(session_id: str):
 
 @app.get("/health")
 async def health():
-    # Simple dependency verification
     status = "ok"
     details = {}
     
-    if pipeline.model is None:
+    # 1. Gemini check
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_key or gemini_key == "your_gemini_api_key_here":
+        details["gemini_api"] = "Key missing"
         status = "degraded"
-        details["gemini_api"] = "Model failed to initialize. Check GEMINI_API_KEY."
     else:
         details["gemini_api"] = "healthy"
 
-    if pipeline.retriever.index is None:
+    # 2. Groq check
+    groq_key = os.getenv("GROQ_API_KEY")
+    if not groq_key or groq_key == "your_groq_api_key_here":
+        details["groq_api"] = "Key missing (Failover Offline)"
+    else:
+        details["groq_api"] = "healthy (Failover Active)"
+
+    # 3. Vector DB check
+    # Check if retriever has self.kb
+    from src.graph import retriever
+    if retriever.index is None:
         status = "degraded"
-        details["vector_index"] = "FAISS index missing. Run scripts/build_index.py."
+        details["vector_index"] = "FAISS index missing"
     else:
         details["vector_index"] = "healthy"
         
