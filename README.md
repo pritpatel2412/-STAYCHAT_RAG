@@ -60,6 +60,37 @@ To deliver instant interactive feedback while maintaining strict RAG guardrail v
   (Safe Handoff Override)       (Yields "replacement" chunk if unsafe)
 ```
 
+```mermaid
+sequenceDiagram
+    actor Guest
+    participant UI as Streamlit UI Client
+    participant API as FastAPI Service
+    participant LG as LangGraph Orchestrator
+    participant LLM as Gemini/Groq APIs
+
+    Guest->>UI: Enter Query
+    UI->>API: POST /chat/stream
+    API->>LG: Execute Graph
+    Note over LG: input_guardrail\nlanguage_detector\nintent_classifier\nretriever
+    LG-->>API: Intent + Language + Retrieval Results
+    API-->>UI: NDJSON Chunk\n(type=telemetry)
+    Note right of UI: Update badges\nIntent\nLanguage\nVector Rank
+    API->>LLM: Open Streaming Connection
+    loop Real-Time Token Streaming
+        LLM-->>API: Token Chunks
+        API-->>UI: NDJSON Chunk\n(type=token)
+        Note right of UI: Append text\nShow typing cursor ▌
+    end
+    API->>API: Buffer Full Response
+    API->>API: Execute Output Guardrail
+    alt Response Safe
+        API-->>UI: Stream Complete
+    else Unsafe Output Detected
+        API-->>UI: NDJSON Chunk\n(type=replacement)
+        Note right of UI: Discard tokens\nReplace with Safe Handoff
+    end
+```
+
 1. **Early Telemetry Delivery:** The backend runs the input safety, language, intent, and hybrid retrieval nodes synchronously in milliseconds. It instantly yields a `"telemetry"` chunk to update sidebar badges and retrieval rank logs on the frontend immediately.
 2. **SSE Streaming Completions:** The backend streams generated tokens from Gemini (`model.generate_content(stream=True)`) or decodes the SSE response stream from Groq, yielding `"token"` chunks to render real-time character typing with an active cursor (`▌`).
 3. **Buffer-Based Post-Scan Security:** The backend accumulates streamed tokens in a local text buffer. At stream completion, it runs the `output_guardrail` node. If a pricing or URL trap is detected, the backend emits a `"replacement"` chunk, instructing the Streamlit frontend to instantly clear and override the output with the safe handoff text.
