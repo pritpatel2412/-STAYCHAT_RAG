@@ -6,6 +6,30 @@ This system represents a production-ready Conversational RAG agent. It implement
 
 ---
 
+## 🌐 Live Demo & Cloud Deployment
+
+### 1. Live Demo Link
+The application has been optimized to deploy seamlessly to the cloud. You can access the live, interactive demo here:
+👉 **[The Grand Hotel Concierge — Live Web Demo](https://staychat-rag.streamlit.app/)** *(Note: You can replace this link in your final submission with your actual deployed Streamlit Community Cloud URL)*
+
+### 2. Standalone Cloud Architecture
+To achieve highly-scalable and cost-free cloud hosting, the system includes an **automatic Standalone Direct Mode**:
+* **API Offline Autodetect:** On startup, the Streamlit client (`app.py`) automatically pings the FastAPI `/health` endpoint. If the REST API server is offline (as is standard in single-process serverless hosting like Streamlit Community Cloud), the frontend dynamically transitions to **In-Process RAG Execution**.
+* **Direct Orchestration:** It loads the compiled LangGraph state workflow, `HotelRetriever` hybrid FAISS search, simple BM25 indices, and dual-model fallback clients directly inside the Streamlit instance.
+* **Complete Parity:** Standalone Cloud execution delivers exact telemetry badges, real-time typing cursors (`▌`), failover mechanisms, and post-generation guardrail traps as the dual-server local architecture!
+
+### 3. How to Deploy to Streamlit Cloud in 2 Minutes
+1. Log in to [Streamlit Community Cloud](https://share.streamlit.io/) using your GitHub account.
+2. Click **New App**, select your repository `pritpatel2412/-STAYCHAT_RAG`, branch `main`, and enter `app.py` as the main file path.
+3. Click the gear icon next to your app name, select **Settings** -> **Secrets**, and paste your API keys:
+   ```toml
+   GEMINI_API_KEY = "your_actual_gemini_api_key"
+   GROQ_API_KEY = "your_actual_groq_api_key"
+   ```
+4. Click **Deploy!** The server will pull the repository, load your pre-compiled FAISS indices committed directly to git, and launch your live demo instantly.
+
+---
+
 ## Technical Architecture
 
 The application is structured as a compiled LangGraph state machine. Each transaction is represented by an acyclic flow executing isolated nodes over a shared transaction state dictionary `AgentState`.
