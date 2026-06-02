@@ -3,9 +3,24 @@
 import streamlit as st
 import requests
 import uuid
+import os
+from dotenv import load_dotenv
+
+# Load local environment variables if present
+load_dotenv()
 
 API_URL = "http://localhost:8001/chat"
 HEALTH_URL = "http://localhost:8001/health"
+
+# Auto-detect standalone execution mode
+use_direct_pipeline = False
+try:
+    health_resp = requests.get(HEALTH_URL, timeout=1.5)
+    if health_resp.status_code != 200:
+        use_direct_pipeline = True
+except Exception:
+    use_direct_pipeline = True
+
 
 # Set up page configurations with a premium aesthetic
 st.set_page_config(
@@ -119,6 +134,14 @@ if "session_id" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Initialize Standalone Components if needed
+if use_direct_pipeline and "direct_pipeline" not in st.session_state:
+    from src.rag_pipeline import RAGPipeline
+    from src.conversation import ConversationManager
+    st.session_state.direct_pipeline = RAGPipeline()
+    st.session_state.direct_conv_manager = ConversationManager()
+
+
 # Sidebar panel
 with st.sidebar:
     st.markdown('<div class="sidebar-title">LangGraph State Orchestrator</div>', unsafe_allow_html=True)
@@ -127,26 +150,53 @@ with st.sidebar:
 
     # Display System Health
     st.markdown("### System Component Status")
-    try:
-        health_resp = requests.get(HEALTH_URL, timeout=3)
-        if health_resp.status_code == 200:
-            health_data = health_resp.json()
-            
-            # Gemini status
-            gemini_status = "Connected" if "healthy" in health_data["details"]["gemini_api"] else "Offline"
-            st.write(f"**Gemini API:** {gemini_status}")
-            
-            # Groq status
-            groq_status = "Active" if "healthy" in health_data["details"]["groq_api"] else "Offline"
-            st.write(f"**Groq Fallback:** {groq_status}")
-            
-            # FAISS DB status
-            vector_status = "Online" if "healthy" in health_data["details"]["vector_index"] else "Offline"
-            st.write(f"**FAISS Index:** {vector_status}")
+    if use_direct_pipeline:
+        st.info("⚡ Standalone Direct Cloud Active")
+        
+        # Check Gemini API Key
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        if not gemini_key or gemini_key == "your_gemini_api_key_here":
+            st.write("**Gemini API:** Key missing ❌")
         else:
-            st.warning("API Service is starting or unhealthy.")
-    except Exception:
-        st.error("API Offline (Run `uvicorn api.main:app` in terminal)")
+            st.write("**Gemini API:** Connected ✅")
+            
+        # Check Groq API Key
+        groq_key = os.getenv("GROQ_API_KEY")
+        if not groq_key or groq_key == "your_groq_api_key_here":
+            st.write("**Groq Fallback:** Key missing ❌")
+        else:
+            st.write("**Groq Fallback:** Active ✅")
+            
+        # Check FAISS DB status
+        try:
+            from src.graph import retriever
+            if retriever.index is None:
+                st.write("**FAISS Index:** Offline ❌")
+            else:
+                st.write("**FAISS Index:** Online ✅")
+        except Exception:
+            st.write("**FAISS Index:** Offline ❌")
+    else:
+        try:
+            health_resp = requests.get(HEALTH_URL, timeout=3)
+            if health_resp.status_code == 200:
+                health_data = health_resp.json()
+                
+                # Gemini status
+                gemini_status = "Connected" if "healthy" in health_data["details"]["gemini_api"] else "Offline"
+                st.write(f"**Gemini API:** {gemini_status}")
+                
+                # Groq status
+                groq_status = "Active" if "healthy" in health_data["details"]["groq_api"] else "Offline"
+                st.write(f"**Groq Fallback:** {groq_status}")
+                
+                # FAISS DB status
+                vector_status = "Online" if "healthy" in health_data["details"]["vector_index"] else "Offline"
+                st.write(f"**FAISS Index:** {vector_status}")
+            else:
+                st.warning("API Service is starting or unhealthy.")
+        except Exception:
+            st.error("API Offline (Run `uvicorn api.main:app` in terminal)")
 
     st.markdown("---")
     
@@ -155,10 +205,14 @@ with st.sidebar:
     st.write(f"**Active UUID:** `{st.session_state.session_id[:8]}...`")
     
     if st.button("Reset Conversation", use_container_width=True):
-        try:
-            requests.delete(f"http://localhost:8001/session/{st.session_state.session_id}", timeout=5)
-        except Exception:
-            pass
+        if use_direct_pipeline:
+            if "direct_conv_manager" in st.session_state:
+                st.session_state.direct_conv_manager.clear_session(st.session_state.session_id)
+        else:
+            try:
+                requests.delete(f"http://localhost:8001/session/{st.session_state.session_id}", timeout=5)
+            except Exception:
+                pass
         st.session_state.session_id = str(uuid.uuid4())
         st.session_state.messages = []
         if "last_telemetry" in st.session_state:
@@ -204,59 +258,43 @@ with col_chat:
             message_placeholder = st.empty()
             message_placeholder.markdown("Compiling search state...")
             
-            try:
-                import json
-                # POST real-time stream request
-                resp = requests.post(
-                    API_URL + "/stream" if not API_URL.endswith("/stream") else API_URL,
-                    json={
-                        "session_id": st.session_state.session_id,
-                        "message": prompt
-                    },
-                    stream=True,
-                    timeout=25
-                )
-                
-                if resp.status_code == 200:
-                    full_text = ""
-                    telemetry = None
+            if use_direct_pipeline:
+                try:
+                    pipeline = st.session_state.direct_pipeline
+                    conv_manager = st.session_state.direct_conv_manager
                     
-                    # Read line-by-line JSON payload stream
-                    for line in resp.iter_lines():
-                        if line:
-                            chunk = json.loads(line.decode("utf-8"))
-                            
-                            if chunk["type"] == "telemetry":
-                                telemetry = chunk
-                                # Update dynamic telemetry panel session state
-                                st.session_state.last_telemetry = {
-                                    "intent": chunk["intent"],
-                                    "language": chunk["language"],
-                                    "guardrail_triggered": False,
-                                    "retrieved_docs": chunk["retrieved_docs"],
-                                    "failover_active": chunk["failover_active"]
-                                }
-                            elif chunk["type"] == "telemetry_update":
-                                if "last_telemetry" in st.session_state:
-                                    st.session_state.last_telemetry["failover_active"] = chunk["failover_active"]
-                                    
-                            elif chunk["type"] == "token":
-                                full_text += chunk["text"]
-                                # Premium real-time typing animation
-                                message_placeholder.markdown(full_text + "▌")
-                                
-                            elif chunk["type"] == "replacement":
-                                # Secure Output Guardrail trigger override
-                                full_text = chunk["text"]
-                                if "last_telemetry" in st.session_state:
-                                    st.session_state.last_telemetry["guardrail_triggered"] = True
-                                message_placeholder.markdown(full_text)
-                                
-                            elif chunk["type"] == "error":
-                                st.error(f"Generation error: {chunk['message']}")
-                                
+                    history = conv_manager.get_history(st.session_state.session_id)
+                    full_text = ""
+                    
+                    for chunk in pipeline.run_stream(prompt, history):
+                        if chunk["type"] == "telemetry":
+                            st.session_state.last_telemetry = {
+                                "intent": chunk["intent"],
+                                "language": chunk["language"],
+                                "guardrail_triggered": False,
+                                "retrieved_docs": chunk["retrieved_docs"],
+                                "failover_active": chunk["failover_active"]
+                            }
+                        elif chunk["type"] == "telemetry_update":
+                            if "last_telemetry" in st.session_state:
+                                st.session_state.last_telemetry["failover_active"] = chunk["failover_active"]
+                        elif chunk["type"] == "token":
+                            full_text += chunk["text"]
+                            message_placeholder.markdown(full_text + "▌")
+                        elif chunk["type"] == "replacement":
+                            full_text = chunk["text"]
+                            if "last_telemetry" in st.session_state:
+                                st.session_state.last_telemetry["guardrail_triggered"] = True
+                            message_placeholder.markdown(full_text)
+                        elif chunk["type"] == "error":
+                            st.error(f"Generation error: {chunk['message']}")
+
                     # Set final cleaned text output
                     message_placeholder.markdown(full_text)
+                    
+                    # Update local standalone conversation history
+                    conv_manager.add_turn(st.session_state.session_id, "user", prompt)
+                    conv_manager.add_turn(st.session_state.session_id, "assistant", full_text)
 
                     # Append assistant message to history
                     st.session_state.messages.append({
@@ -264,12 +302,76 @@ with col_chat:
                         "content": full_text,
                         "meta": st.session_state.get("last_telemetry")
                     })
-                    
                     st.rerun()
-                else:
-                    st.error(f"Error {resp.status_code}: Could not fetch stream.")
-            except Exception as e:
-                st.error(f"Could not connect to FastAPI server: {e}")
+                except Exception as e:
+                    st.error(f"Standalone pipeline execution failed: {e}")
+            else:
+                try:
+                    import json
+                    # POST real-time stream request
+                    resp = requests.post(
+                        API_URL + "/stream" if not API_URL.endswith("/stream") else API_URL,
+                        json={
+                            "session_id": st.session_state.session_id,
+                            "message": prompt
+                        },
+                        stream=True,
+                        timeout=25
+                    )
+                    
+                    if resp.status_code == 200:
+                        full_text = ""
+                        telemetry = None
+                        
+                        # Read line-by-line JSON payload stream
+                        for line in resp.iter_lines():
+                            if line:
+                                chunk = json.loads(line.decode("utf-8"))
+                                
+                                if chunk["type"] == "telemetry":
+                                    telemetry = chunk
+                                    # Update dynamic telemetry panel session state
+                                    st.session_state.last_telemetry = {
+                                        "intent": chunk["intent"],
+                                        "language": chunk["language"],
+                                        "guardrail_triggered": False,
+                                        "retrieved_docs": chunk["retrieved_docs"],
+                                        "failover_active": chunk["failover_active"]
+                                    }
+                                elif chunk["type"] == "telemetry_update":
+                                    if "last_telemetry" in st.session_state:
+                                        st.session_state.last_telemetry["failover_active"] = chunk["failover_active"]
+                                        
+                                elif chunk["type"] == "token":
+                                    full_text += chunk["text"]
+                                    # Premium real-time typing animation
+                                    message_placeholder.markdown(full_text + "▌")
+                                    
+                                elif chunk["type"] == "replacement":
+                                    # Secure Output Guardrail trigger override
+                                    full_text = chunk["text"]
+                                    if "last_telemetry" in st.session_state:
+                                        st.session_state.last_telemetry["guardrail_triggered"] = True
+                                    message_placeholder.markdown(full_text)
+                                    
+                                elif chunk["type"] == "error":
+                                    st.error(f"Generation error: {chunk['message']}")
+                                    
+                        # Set final cleaned text output
+                        message_placeholder.markdown(full_text)
+
+                        # Append assistant message to history
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": full_text,
+                            "meta": st.session_state.get("last_telemetry")
+                        })
+                        
+                        st.rerun()
+                    else:
+                        st.error(f"Error {resp.status_code}: Could not fetch stream.")
+                except Exception as e:
+                    st.error(f"Could not connect to FastAPI server: {e}")
 
 # Right column: Telemetry Dashboard & Debug Info
 with col_telemetry:

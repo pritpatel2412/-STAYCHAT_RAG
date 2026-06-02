@@ -15,9 +15,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Vector Index Artifacts
-faiss_index/
-*.pkl
+# Vector Index Artifacts (tracked for cloud deployment)
 
 # AI visual diagram generation prompts
 ai_diagram_prompts.md
