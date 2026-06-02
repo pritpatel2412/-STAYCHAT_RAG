@@ -21,3 +21,6 @@ faiss_index/
 
 # AI visual diagram generation prompts
 ai_diagram_prompts.md
+
+# Internal understanding prompts (local only)
+hotel_rag_bot_agent_prompt.md

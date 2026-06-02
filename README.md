@@ -47,18 +47,6 @@ graph TD
 
 To deliver instant interactive feedback while maintaining strict RAG guardrail verification, the system uses a Newline-Delimited JSON (NDJSON) streaming pipeline:
 
-```
-[Streamlit Client UI] ───────── POST /chat/stream ─────────► [FastAPI Backend REST Service]
-                                                                     │
-[Streamlit Client UI] ◄─────── 1. Yields Telemetry ──────────────────┼── Runs Pre-Gen Nodes
-  (Dynamic Badges Update)       (Intent, Language, Docs)             │   (IG, LD, IC, Retriever)
-                                                                     ▼
-[Streamlit Client UI] ◄─────── 2. Yields Token Chunks ───────────────┼── Streams LLM Output
-  (Interactive Cursor "▌")      (Gemini / Groq SSE Decoders)         │   (Compiling full text buffer)
-                                                                     ▼
-[Streamlit Client UI] ◄─────── 3. Final Guardrail Verification ──────┴── Runs output_guardrail
-  (Safe Handoff Override)       (Yields "replacement" chunk if unsafe)
-```
 
 ```mermaid
 sequenceDiagram
