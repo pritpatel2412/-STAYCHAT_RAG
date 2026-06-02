@@ -18,3 +18,6 @@ Thumbs.db
 # Vector Index Artifacts
 faiss_index/
 *.pkl
+
+# AI visual diagram generation prompts
+ai_diagram_prompts.md
