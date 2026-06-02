@@ -67,3 +67,56 @@ class GroqClient:
         except Exception as e:
             logger.error(f"Failed to communicate with Groq API endpoint: {e}")
             raise e
+
+    def generate_content_stream(self, prompt: str, system_instruction: str = None):
+        """
+        Requests streaming completions from Groq, yielding text chunks in real-time.
+        """
+        if not self.api_key:
+            raise ValueError("Groq API Key is unconfigured. Cannot execute failover request.")
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        messages = []
+        if system_instruction:
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0.1,
+            "max_tokens": 1024,
+            "stream": True  # Enable streaming
+        }
+
+        logger.info(f"Routing streaming failover query to Groq using model '{self.model}'...")
+        try:
+            import json
+            resp = requests.post(self.endpoint, json=payload, headers=headers, stream=True, timeout=15)
+            if resp.status_code == 200:
+                for line in resp.iter_lines():
+                    if not line:
+                        continue
+                    line_str = line.decode("utf-8").strip()
+                    if line_str.startswith("data: "):
+                        data_content = line_str[6:]
+                        if data_content == "[DONE]":
+                            break
+                        try:
+                            chunk_data = json.loads(data_content)
+                            delta = chunk_data["choices"][0]["delta"]
+                            if "content" in delta:
+                                yield delta["content"]
+                        except Exception:
+                            continue
+            else:
+                logger.error(f"Groq streaming API returned error status {resp.status_code}")
+                raise RuntimeError(f"Groq streaming failure: {resp.status_code}")
+        except Exception as e:
+            logger.error(f"Failed to stream from Groq API endpoint: {e}")
+            raise e
+

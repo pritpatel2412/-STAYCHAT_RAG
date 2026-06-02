@@ -4,6 +4,8 @@ import uuid
 import time
 import os
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import StreamingResponse
+import json
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from src.rag_pipeline import RAGPipeline
@@ -102,6 +104,49 @@ async def chat(request: ChatRequest):
             status_code=500,
             detail="An error occurred while compiling your message. Please try again."
         )
+
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    session_id = request.session_id or str(uuid.uuid4())
+    user_msg = request.message.strip()
+
+    if not user_msg:
+        logger.warning("Rejecting request: Empty message string received.")
+        raise HTTPException(status_code=400, detail="Message content cannot be blank.")
+
+    try:
+        # Load conversation sliding-window context
+        history = conv_manager.get_history(session_id)
+        
+        def event_generator():
+            full_text = ""
+            try:
+                # Run the pipeline stream generator
+                for chunk in pipeline.run_stream(user_msg, history):
+                    if chunk["type"] == "token":
+                        full_text += chunk["text"]
+                    elif chunk["type"] == "replacement":
+                        full_text = chunk["text"]
+                    
+                    # Yield as Newline Delimited JSON (NDJSON)
+                    yield json.dumps(chunk) + "\n"
+                
+                # Commit clean complete turns to memory
+                conv_manager.add_turn(session_id, "user", user_msg)
+                conv_manager.add_turn(session_id, "assistant", full_text)
+                
+            except Exception as e:
+                logger.error(f"Error in backend event generator: {e}")
+                yield json.dumps({"type": "error", "message": str(e)}) + "\n"
+
+        return StreamingResponse(event_generator(), media_type="application/x-ndjson")
+    except Exception as e:
+        logger.error(f"Internal Pipeline Error inside POST /chat/stream: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while compiling your message stream. Please try again."
+        )
+
 
 
 @app.delete("/session/{session_id}")
